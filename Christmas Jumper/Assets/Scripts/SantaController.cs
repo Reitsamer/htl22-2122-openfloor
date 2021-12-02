@@ -2,14 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SantaController : MonoBehaviour
+public class SantaController : KinematicObject
 {
     public Animator animator;
     public SpriteRenderer spriteRenderer;
-    public Rigidbody2D rigidBody;
-    public float speed = 10f;
-    public float force = 50f;
 
+    public float maxSpeed = 7f;
+    public float jumpTakeOffSpeed = 7f;
+
+    public Vector2 move;
+    private bool jump;
+    
     private static readonly int WALK_TRIGGER = Animator.StringToHash("Walk");
     private static readonly int RUN_TRIGGER = Animator.StringToHash("Run");
     private static readonly int IDLE_TRIGGER = Animator.StringToHash("Idle");
@@ -26,10 +29,22 @@ public class SantaController : MonoBehaviour
         animator.ResetTrigger(SLIDE_TRIGGER);
         animator.ResetTrigger(DEAD_TRIGGER);
     }
+
+    protected override void ComputeVelocity()
+    {
+        if (jump && IsGrounded)
+        {
+            velocity.y = jumpTakeOffSpeed;
+            jump = false;
+        }
+
+        targetVelocity = move * maxSpeed;
+    }
     
     // Update is called once per frame
-    void Update()
+    protected override void Update()
     {
+        move.x = 0;
         if (Input.GetKeyDown(KeyCode.D))
         {
             ResetAllTriggers();
@@ -49,19 +64,25 @@ public class SantaController : MonoBehaviour
         
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            animator.speed = 1f;
             ResetAllTriggers();
             animator.SetTrigger(JUMP_TRIGGER);
-            rigidBody.AddForce(Vector2.up * force, ForceMode2D.Impulse);
+            if (IsGrounded)
+                jump = true;
         }
         else if (Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.LeftArrow))
         {
             if (Input.GetKey(KeyCode.RightArrow))
             {
-               rigidBody.velocity = Vector2.right * speed * Time.deltaTime; 
+                move.x = 1;
+                if (IsGrounded)
+                    animator.speed = 2.5f;
             }
             else
             {
-                rigidBody.velocity = Vector2.left * speed * Time.deltaTime; 
+                move.x = -1;
+                if (IsGrounded)
+                    animator.speed = 2.5f;
             }
             
             ResetAllTriggers();
@@ -72,6 +93,7 @@ public class SantaController : MonoBehaviour
             else if (Input.GetKey(KeyCode.LeftShift))
             {
                 animator.SetTrigger(RUN_TRIGGER);
+                move.x *= 1.5f;
             }
             else
             {
@@ -83,5 +105,7 @@ public class SantaController : MonoBehaviour
             ResetAllTriggers();
             animator.SetTrigger(IDLE_TRIGGER);
         }
+        
+        base.Update();
     }
 }
