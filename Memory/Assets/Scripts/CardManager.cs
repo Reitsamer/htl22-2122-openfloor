@@ -6,7 +6,7 @@ using Random = UnityEngine.Random;
 
 public class CardManager : MonoBehaviour
 {
-    public Card[] cards;
+    public CardButton[] cards;
     public Material[] materials;
 
     private void Start()
