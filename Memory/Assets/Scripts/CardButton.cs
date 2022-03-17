@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class CardButton : MonoBehaviour
 {
     public Material backMaterial;
-    private Material frontMaterial;
+    public Material frontMaterial;
 
     private bool showFrontMaterial = false;
 
@@ -31,12 +31,31 @@ public class CardButton : MonoBehaviour
 
     public void OnClicked()
     {
+        if (showFrontMaterial)
+            return;
+        
+        if (CardManager.Instance.SelectedCardsCount < 2)
+            ShowFrontMaterial(true);
+        
         CardManager.Instance.CardClicked(index);
     }
-    
-    public void ChangeMaterial()
+
+    public bool Hidden
     {
-        showFrontMaterial = !showFrontMaterial;
+        get
+        {
+            return !GetComponent<Image>().enabled;
+        }
+    }
+    
+    public void HideCard(bool flag)
+    {
+        GetComponent<Image>().enabled = !flag;
+    }
+    
+    public void ShowFrontMaterial(bool flag)
+    {
+        showFrontMaterial = flag;
         
         SetUsedMaterial();
     }
