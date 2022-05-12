@@ -19,6 +19,9 @@ public class SimpleCarController : MonoBehaviour {
 
     public float fireFrequency = 5f;
     private float remainingTime;
+
+    [SerializeField]
+    private float speedMultiplier = 1f;
     
     // finds the corresponding visual wheel
     // correctly applies the transform
@@ -48,6 +51,15 @@ public class SimpleCarController : MonoBehaviour {
                 remainingTime = 1/fireFrequency;
                 gunFireLeft.SetActive(!gunFireLeft.activeSelf);
                 gunFireRight.SetActive(!gunFireRight.activeSelf);
+                if (gunFireLeft.activeSelf)
+                {
+                    ShootGun(gunFireLeft.transform);
+                }
+
+                if (gunFireRight.activeSelf)
+                {
+                    ShootGun(gunFireRight.transform);
+                }
             }
         }
         else
@@ -57,12 +69,26 @@ public class SimpleCarController : MonoBehaviour {
             gunFireRight.SetActive(false);
         }
     }
-    
+
+    private void ShootGun(Transform gun)
+    {
+        if (GetHitPosition(gun, out RaycastHit hitInfo))
+        {
+            Transform enemy = hitInfo.transform;
+            CarBrain enemyCarBrain = enemy.GetComponent<CarBrain>();
+            enemyCarBrain.GotHit();
+        }
+    }
+
     public void FixedUpdate()
     {
-        float speed = IsOnRoad() ? 1f : 0.25f;  // ternary operator
+        float speed = (IsOnRoad() ? 1f : 0.25f) * speedMultiplier;  // ternary operator
         
-        float motor = maxMotorTorque * speed * Input.GetAxis("Vertical");
+        var acceleration = Input.GetAxis("Vertical");
+        if (acceleration < 0)
+            acceleration *= 2;
+
+        float motor = maxMotorTorque * speed * acceleration;
         float steering = maxSteeringAngle * Input.GetAxis("Horizontal");
             
         foreach (AxleInfo axleInfo in axleInfos) {
@@ -87,15 +113,16 @@ public class SimpleCarController : MonoBehaviour {
         return Physics.Raycast(barrelTransform.position, transform.TransformDirection(Vector3.forward), Mathf.Infinity, 1 << 7);
     }
 
-    private Vector3 GetHitPosition(Transform barrelTransform)
+    private bool GetHitPosition(Transform barrelTransform, out RaycastHit hitPoint)
     {
-        Physics.Raycast(
+        bool hitSuccess = Physics.Raycast(
             barrelTransform.position, 
             transform.TransformDirection(Vector3.forward), 
-            out RaycastHit hitInfo, 
-            Mathf.Infinity, 1 << 7);
+            out hitPoint, 
+            Mathf.Infinity,
+            1 << 7);
 
-        return hitInfo.point;
+        return hitSuccess;
     }
     
     private void OnDrawGizmos()
@@ -112,16 +139,20 @@ public class SimpleCarController : MonoBehaviour {
 
         if (HitsEnemy(gunBarrelLeft))
         {
-            Vector3 hitPoint = GetHitPosition(gunBarrelLeft);
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(hitPoint, 0.1f);
+            if (GetHitPosition(gunBarrelLeft, out RaycastHit hitInfo))
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(hitInfo.point, 0.1f);
+            }
         }
         
         if (HitsEnemy(gunBarrelRight))
         {
-            Vector3 hitPoint = GetHitPosition(gunBarrelRight);
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(hitPoint, 0.1f);
+            if (GetHitPosition(gunBarrelRight, out RaycastHit hitInfo))
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(hitInfo.point, 0.1f);
+            }
         }
         
         Gizmos.color = oldColor;
