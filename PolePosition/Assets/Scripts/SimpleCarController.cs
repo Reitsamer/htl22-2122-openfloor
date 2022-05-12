@@ -50,6 +50,12 @@ public class SimpleCarController : MonoBehaviour {
                 gunFireRight.SetActive(!gunFireRight.activeSelf);
             }
         }
+        else
+        {
+            remainingTime = 1/fireFrequency;
+            gunFireLeft.SetActive(false);
+            gunFireRight.SetActive(false);
+        }
     }
     
     public void FixedUpdate()
